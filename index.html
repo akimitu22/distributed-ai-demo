@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributed AI Client Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        button { padding: 10px 20px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h1>Distributed AI Client Demo</h1>
+    <div id="deviceInfo"></div>
+    <button id="simulateTask">Simulate AI Task</button>
+    <div id="result"></div>
+
+    <script>
+        function getDeviceInfo() {
+            return {
+                platform: navigator.platform,
+                cores: navigator.hardwareConcurrency || 'Unknown',
+                userAgent: navigator.userAgent
+            };
+        }
+
+        function displayDeviceInfo() {
+            const info = getDeviceInfo();
+            document.getElementById('deviceInfo').innerHTML = `
+                <h2>Device Information:</h2>
+                <p>Platform: ${info.platform}</p>
+                <p>Cores: ${info.cores}</p>
+                <p>User Agent: ${info.userAgent}</p>
+            `;
+        }
+
+        function simulateAITask() {
+            const startTime = performance.now();
+            for (let i = 0; i < 1000000; i++) {
+                Math.sqrt(i);
+            }
+            const endTime = performance.now();
+            document.getElementById('result').textContent = `AI Task simulated in ${(endTime - startTime).toFixed(2)} ms`;
+        }
+
+        displayDeviceInfo();
+        document.getElementById('simulateTask').addEventListener('click', simulateAITask);
+    </script>
+</body>
+</html>
