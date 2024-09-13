@@ -3,52 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Distributed AI Client Demo</title>
+    <title>Enhanced Distributed AI Client Demo</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f4f4f9;
-            color: #333;
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background-color: #f4f4f9; 
+            color: #333; 
         }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
+        button { 
+            padding: 10px 20px; 
+            font-size: 16px; 
+            background-color: #007BFF; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            transition: background-color 0.3s ease; 
+            margin: 5px;
         }
-        button:hover {
-            background-color: #0056b3;
+        button:hover { 
+            background-color: #0056b3; 
         }
-        #result {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #e9ecef;
+        #result, #taskDescriptions { 
+            margin-top: 20px; 
+            padding: 10px; 
+            background-color: #e9ecef; 
+            border: 1px solid #ced4da; 
+            border-radius: 5px; 
+        }
+        canvas { 
+            margin-top: 20px; 
+            background-color: white;
             border: 1px solid #ced4da;
             border-radius: 5px;
-        }
-        canvas {
-            margin-top: 20px;
+            padding: 10px;
         }
     </style>
 </head>
 <body>
-    <h1>Distributed AI Client Demo</h1>
+    <h1>Enhanced Distributed AI Client Demo</h1>
     <div id="deviceInfo"></div>
     
-    <button id="simulateAllTasks">Simulate All AI Tasks</button>
-    <div id="result"></div>
-    <canvas id="myChart"></canvas> <!-- グラフ描画用のキャンバス -->
+    <div id="taskDescriptions">
+        <h3>Task Descriptions:</h3>
+        <p><strong>Simple Task:</strong> Performs basic mathematical operations to simulate CPU load.</p>
+        <p><strong>Image Recognition:</strong> Simulates trigonometric calculations often used in image processing.</p>
+        <p><strong>NLP Task:</strong> Generates random characters to mimic natural language processing operations.</p>
+    </div>
 
-    <!-- Chart.jsをCDNから読み込む -->
+    <button id="simulateAllTasks">Simulate All AI Tasks</button>
+    <button id="simulateSimpleTask">Simulate Simple Task</button>
+    <button id="simulateImageRecognition">Simulate Image Recognition</button>
+    <button id="simulateNLP">Simulate NLP Task</button>
+    <div id="result"></div>
+    <canvas id="myChart"></canvas>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // デバイス情報を取得して表示
+        let chart;
+
         function getDeviceInfo() {
             return {
                 platform: navigator.platform,
@@ -67,53 +82,60 @@
             `;
         }
 
-        let chart; // グラフを保持する変数
-
-        // グラフを描画する関数
         function createChart(taskResults) {
             const ctx = document.getElementById('myChart').getContext('2d');
             
             if (chart) {
-                chart.destroy(); // 既存のチャートを破棄して再描画
+                chart.destroy();
             }
 
             chart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: taskResults.map(result => result.taskType), // タスク名のラベル
+                    labels: taskResults.map(result => result.taskType),
                     datasets: [{
                         label: 'Execution Time (ms)',
-                        data: taskResults.map(result => result.timeTaken), // 実行時間のデータ
+                        data: taskResults.map(result => result.timeTaken),
                         backgroundColor: ['rgba(54, 162, 235, 0.2)', 'rgba(75, 192, 192, 0.2)', 'rgba(153, 102, 255, 0.2)'],
                         borderColor: ['rgba(54, 162, 235, 1)', 'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)'],
                         borderWidth: 1
                     }]
                 },
                 options: {
+                    responsive: true,
                     scales: {
                         y: {
-                            beginAtZero: true
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Execution Time (ms)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'AI Task Execution Times'
                         }
                     }
                 }
             });
         }
 
-        // 各AIタスクのシミュレーション関数
         function simulateTask(taskType) {
             return new Promise((resolve) => {
                 setTimeout(() => {
                     const startTime = performance.now();
 
-                    if (taskType === 'simpleTask') {
+                    if (taskType === 'Simple Task') {
                         for (let i = 0; i < 1000000; i++) {
                             Math.sqrt(i);
                         }
-                    } else if (taskType === 'imageRecognition') {
+                    } else if (taskType === 'Image Recognition') {
                         for (let i = 0; i < 1000000; i++) {
                             Math.sin(i);
                         }
-                    } else if (taskType === 'nlp') {
+                    } else if (taskType === 'NLP Task') {
                         for (let i = 0; i < 1000000; i++) {
                             String.fromCharCode(97 + Math.floor(Math.random() * 26));
                         }
@@ -121,37 +143,48 @@
 
                     const endTime = performance.now();
                     const timeTaken = (endTime - startTime).toFixed(2);
-                    resolve({ taskType, timeTaken });
-                }, 100); // 非同期的に処理を実行
+                    resolve({ taskType, timeTaken: parseFloat(timeTaken) });
+                }, 100);
             });
         }
 
-        // すべてのAIタスクを一度に実行して結果を表示
         async function simulateAllTasks() {
             document.getElementById('result').textContent = 'AI Tasks are running...';
 
             try {
                 const results = await Promise.all([
-                    simulateTask('simpleTask'),
-                    simulateTask('imageRecognition'),
-                    simulateTask('nlp')
+                    simulateTask('Simple Task'),
+                    simulateTask('Image Recognition'),
+                    simulateTask('NLP Task')
                 ]);
 
-                document.getElementById('result').textContent = 'All tasks completed';
-                
-                // グラフを描画
+                let resultText = 'All tasks completed:\n';
+                results.forEach(result => {
+                    resultText += `${result.taskType}: ${result.timeTaken} ms\n`;
+                });
+                document.getElementById('result').textContent = resultText;
                 createChart(results);
-
             } catch (error) {
                 document.getElementById('result').textContent = `Error: ${error.message}`;
             }
         }
 
-        // ページ読み込み時にデバイス情報を表示
-        displayDeviceInfo();
+        async function runTask(taskType) {
+            document.getElementById('result').textContent = `Running ${taskType}...`;
+            try {
+                const result = await simulateTask(taskType);
+                document.getElementById('result').textContent = `${taskType} completed in ${result.timeTaken} ms`;
+                createChart([result]);
+            } catch (error) {
+                document.getElementById('result').textContent = `Error: ${error.message}`;
+            }
+        }
 
-        // ボタンのクリックイベントですべてのAIタスクをシミュレート
+        displayDeviceInfo();
         document.getElementById('simulateAllTasks').addEventListener('click', simulateAllTasks);
+        document.getElementById('simulateSimpleTask').addEventListener('click', () => runTask('Simple Task'));
+        document.getElementById('simulateImageRecognition').addEventListener('click', () => runTask('Image Recognition'));
+        document.getElementById('simulateNLP').addEventListener('click', () => runTask('NLP Task'));
     </script>
 </body>
 </html>
