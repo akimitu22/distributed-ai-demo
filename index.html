@@ -186,7 +186,8 @@
                 timeSeriesChart.destroy();
             }
 
-            const datasets = Object.entries(getDeviceResults()).map(([device, results]) => ({
+            const deviceResults = getDeviceResults();
+            const datasets = Object.entries(deviceResults).map(([device, results]) => ({
                 label: device,
                 data: results.map(result => ({
                     x: new Date(result.timestamp),
@@ -394,8 +395,24 @@
             }
         }
 
+// イベントリスナーの設定
         document.getElementById('simulateAllTasks').addEventListener('click', runAllTasks);
         document.getElementById('simulateSimpleTask').addEventListener('click', () => runTask('Simple Task'));
         document.getElementById('simulateImageRecognition').addEventListener('click', () => runTask('Image Recognition'));
         document.getElementById('simulateNLP').addEventListener('click', () => runTask('NLP Task'));
-        document.getElementByI
+        document.getElementById('runCustomTask').addEventListener('click', () => {
+            const iterations = parseInt(document.getElementById('customIterations').value);
+            runTask('Custom Task', iterations);
+        });
+        document.getElementById('exportResults').addEventListener('click', exportResults);
+        document.getElementById('processQueue').addEventListener('click', processQueue);
+        document.getElementById('toggleDarkMode').addEventListener('click', toggleDarkMode);
+        document.getElementById('runNetworkTest').addEventListener('click', runNetworkTest);
+
+        // 初期表示のための関数呼び出し
+        displayDeviceInfo();
+        updateDeviceComparison();
+        updateTimeSeriesChart();
+    </script>
+</body>
+</html>
