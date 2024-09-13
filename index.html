@@ -3,38 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Distributed AI Client Demo</title>
+    <title>Advanced Distributed AI Client Demo</title>
     <style>
+        :root {
+            --bg-color: #f4f4f9;
+            --text-color: #333;
+            --card-bg: #fff;
+            --button-bg: #007BFF;
+            --button-text: white;
+        }
+        .dark-mode {
+            --bg-color: #1a1a1a;
+            --text-color: #f4f4f9;
+            --card-bg: #2c2c2c;
+            --button-bg: #4a90e2;
+            --button-text: #f4f4f9;
+        }
         body {
             font-family: Arial, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f4f4f9;
-            color: #333;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
-        button {
+        button, select, input {
             padding: 10px 20px;
             font-size: 16px;
-            background-color: #007BFF;
-            color: white;
+            background-color: var(--button-bg);
+            color: var(--button-text);
             border: none;
             cursor: pointer;
             transition: background-color 0.3s ease;
             margin: 5px;
         }
         button:hover {
-            background-color: #0056b3;
+            opacity: 0.8;
         }
-        #result, #taskDescriptions {
+        #result, #taskDescriptions, #analysisResult {
             margin-top: 20px;
             padding: 10px;
-            background-color: #e9ecef;
+            background-color: var(--card-bg);
             border: 1px solid #ced4da;
             border-radius: 5px;
         }
         canvas {
             margin-top: 20px;
+            background-color: var(--card-bg);
+            border-radius: 5px;
+            padding: 10px;
         }
         .progress-bar {
             width: 100%;
@@ -53,7 +71,8 @@
     </style>
 </head>
 <body>
-    <h1>Enhanced Distributed AI Client Demo</h1>
+    <h1>Advanced Distributed AI Client Demo</h1>
+    <button id="toggleDarkMode">Toggle Dark Mode</button>
     <div id="deviceInfo"></div>
     
     <div id="taskDescriptions">
@@ -68,14 +87,25 @@
     <button id="simulateImageRecognition">Simulate Image Recognition</button>
     <button id="simulateNLP">Simulate NLP Task</button>
     
+    <div>
+        <h3>Custom Task</h3>
+        <input type="number" id="customIterations" placeholder="Number of iterations" min="1000" max="10000000" value="1000000">
+        <button id="runCustomTask">Run Custom Task</button>
+    </div>
+    
     <div id="result"></div>
     <div id="progressBars"></div>
+    <div id="analysisResult"></div>
     <canvas id="myChart"></canvas>
+    <canvas id="timeSeriesChart"></canvas>
+    
+    <button id="exportResults">Export Results (JSON)</button>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        let chart;
+        let chart, timeSeriesChart;
         let taskHistory = [];
+        let deviceResults = JSON.parse(localStorage.getItem('deviceResults')) || {};
 
         function getDeviceInfo() {
             return {
@@ -124,6 +154,47 @@
             });
         }
 
+        function updateTimeSeriesChart() {
+            const ctx = document.getElementById('timeSeriesChart').getContext('2d');
+            
+            if (timeSeriesChart) {
+                timeSeriesChart.destroy();
+            }
+
+            const datasets = Object.keys(deviceResults).map(device => ({
+                label: device,
+                data: deviceResults[device].map(result => ({
+                    x: new Date(result.timestamp),
+                    y: result.averageTime
+                })),
+                fill: false,
+                borderColor: `rgb(${Math.random() * 255},${Math.random() * 255},${Math.random() * 255})`,
+                tension: 0.1
+            }));
+
+            timeSeriesChart = new Chart(ctx, {
+                type: 'line',
+                data: { datasets },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Average Execution Time (ms)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
         function createProgressBar(taskType) {
             const progressBarsContainer = document.getElementById('progressBars');
             const progressBarContainer = document.createElement('div');
@@ -141,7 +212,7 @@
             progressBar.style.width = `${progress}%`;
         }
 
-        function simulateTask(taskType) {
+        function simulateTask(taskType, iterations = 1000000) {
             return new Promise((resolve) => {
                 const progressBar = createProgressBar(taskType);
                 let progress = 0;
@@ -157,16 +228,20 @@
                     const startTime = performance.now();
 
                     if (taskType === 'simpleTask') {
-                        for (let i = 0; i < 1000000; i++) {
+                        for (let i = 0; i < iterations; i++) {
                             Math.sqrt(i);
                         }
                     } else if (taskType === 'imageRecognition') {
-                        for (let i = 0; i < 1000000; i++) {
+                        for (let i = 0; i < iterations; i++) {
                             Math.sin(i);
                         }
                     } else if (taskType === 'nlp') {
-                        for (let i = 0; i < 1000000; i++) {
+                        for (let i = 0; i < iterations; i++) {
                             String.fromCharCode(97 + Math.floor(Math.random() * 26));
+                        }
+                    } else if (taskType === 'customTask') {
+                        for (let i = 0; i < iterations; i++) {
+                            Math.pow(i, 2);
                         }
                     }
 
@@ -174,7 +249,7 @@
                     const timeTaken = (endTime - startTime).toFixed(2);
                     clearInterval(intervalId);
                     updateProgressBar(progressBar, 100);
-                    resolve({ taskType, timeTaken });
+                    resolve({ taskType, timeTaken: parseFloat(timeTaken), timestamp: new Date().toISOString() });
                 }, 1000);
             });
         }
@@ -184,11 +259,13 @@
             document.getElementById('progressBars').innerHTML = '';
             
             try {
-                const result = await simulateTask(taskType);
+                const iterations = taskType === 'customTask' ? parseInt(document.getElementById('customIterations').value) : 1000000;
+                const result = await simulateTask(taskType, iterations);
                 taskHistory.push(result);
                 createChart(taskHistory);
                 document.getElementById('result').textContent = `${taskType} completed in ${result.timeTaken} ms`;
-                calculatePerformanceScore();
+                analyzeResults();
+                updateDeviceResults();
             } catch (error) {
                 document.getElementById('result').textContent = `Error: ${error.message}`;
             }
@@ -208,27 +285,69 @@
                 taskHistory = results;
                 createChart(results);
                 document.getElementById('result').textContent = 'All tasks completed';
-                calculatePerformanceScore();
+                analyzeResults();
+                updateDeviceResults();
             } catch (error) {
                 document.getElementById('result').textContent = `Error: ${error.message}`;
             }
         }
 
-        function calculatePerformanceScore() {
+        function analyzeResults() {
             if (taskHistory.length === 0) return;
             
-            const totalTime = taskHistory.reduce((sum, task) => sum + parseFloat(task.timeTaken), 0);
+            const totalTime = taskHistory.reduce((sum, task) => sum + task.timeTaken, 0);
             const averageTime = totalTime / taskHistory.length;
-            const score = Math.round(10000 / averageTime);
+            const minTime = Math.min(...taskHistory.map(task => task.timeTaken));
+            const maxTime = Math.max(...taskHistory.map(task => task.timeTaken));
             
-            document.getElementById('result').innerHTML += `<br>Performance Score: ${score}`;
+            const analysisHTML = `
+                <h3>Analysis Results:</h3>
+                <p>Total Tasks: ${taskHistory.length}</p>
+                <p>Average Time: ${averageTime.toFixed(2)} ms</p>
+                <p>Minimum Time: ${minTime.toFixed(2)} ms</p>
+                <p>Maximum Time: ${maxTime.toFixed(2)} ms</p>
+                <p>Performance Score: ${Math.round(10000 / averageTime)}</p>
+            `;
+            
+            document.getElementById('analysisResult').innerHTML = analysisHTML;
+        }
+
+        function updateDeviceResults() {
+            const deviceName = `${navigator.platform} - ${navigator.hardwareConcurrency} cores`;
+            if (!deviceResults[deviceName]) {
+                deviceResults[deviceName] = [];
+            }
+            deviceResults[deviceName].push({
+                timestamp: new Date().toISOString(),
+                averageTime: taskHistory.reduce((sum, task) => sum + task.timeTaken, 0) / taskHistory.length
+            });
+            localStorage.setItem('deviceResults', JSON.stringify(deviceResults));
+            updateTimeSeriesChart();
+        }
+
+        function exportResults() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(taskHistory));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "task_results.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
         }
 
         displayDeviceInfo();
+        updateTimeSeriesChart();
         document.getElementById('simulateAllTasks').addEventListener('click', simulateAllTasks);
         document.getElementById('simulateSimpleTask').addEventListener('click', () => runTask('simpleTask'));
         document.getElementById('simulateImageRecognition').addEventListener('click', () => runTask('imageRecognition'));
         document.getElementById('simulateNLP').addEventListener('click', () => runTask('nlp'));
+        document.getElementById('runCustomTask').addEventListener('click', () => runTask('customTask'));
+        document.getElementById('exportResults').addEventListener('click', exportResults);
+        document.getElementById('toggleDarkMode').addEventListener('click', toggleDarkMode);
     </script>
 </body>
 </html>
