@@ -32,6 +32,13 @@
 
         #result {
             margin-top: 20px;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+
+        .result-success {
+            color: #28a745;
+            font-weight: bold;
         }
 
         canvas {
@@ -90,7 +97,9 @@
             }
             const endTime = performance.now();
             const executionTime = (endTime - startTime).toFixed(2);
-            document.getElementById('result').textContent = `${taskName} simulated in ${executionTime} ms`;
+            const resultText = `${taskName} simulated in ${executionTime} ms`;
+            document.getElementById('result').textContent = resultText;
+            document.getElementById('result').classList.add('result-success');
             updateChart(taskName, executionTime);
             return executionTime;
         }
