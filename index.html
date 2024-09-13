@@ -13,9 +13,6 @@
             background-color: #f4f4f9;
             color: #333;
         }
-        h1 {
-            text-align: center;
-        }
         button {
             padding: 10px 20px;
             font-size: 16px;
@@ -24,9 +21,6 @@
             border: none;
             cursor: pointer;
             transition: background-color 0.3s ease;
-            margin-top: 20px;
-            display: block;
-            width: 100%;
         }
         button:hover {
             background-color: #0056b3;
@@ -44,6 +38,9 @@
             margin-top: 20px;
             font-size: 16px;
         }
+        canvas {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -58,9 +55,12 @@
     
     <button id="simulateTask">Simulate AI Task</button>
     <div id="result"></div>
+    <canvas id="myChart"></canvas> <!-- グラフ描画用のキャンバス -->
 
+    <!-- Chart.jsをCDNから読み込む -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // デバイス情報を取得する関数
+        // デバイス情報を取得して表示
         function getDeviceInfo() {
             return {
                 platform: navigator.platform,
@@ -69,7 +69,6 @@
             };
         }
 
-        // デバイス情報を表示する関数
         function displayDeviceInfo() {
             const info = getDeviceInfo();
             document.getElementById('deviceInfo').innerHTML = `
@@ -80,15 +79,46 @@
             `;
         }
 
+        let chart; // グラフを保持する変数
+
+        // 棒グラフを描画する関数
+        function createChart(taskType, timeTaken) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            
+            if (chart) {
+                chart.destroy(); // 既存のチャートを破棄して再描画
+            }
+
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [taskType], // タスク名
+                    datasets: [{
+                        label: 'Execution Time (ms)',
+                        data: [timeTaken], // 実行時間
+                        backgroundColor: ['rgba(54, 162, 235, 0.2)'],
+                        borderColor: ['rgba(54, 162, 235, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
         // AIタスクのシミュレーション関数
         async function simulateAITask() {
             const taskType = document.getElementById('taskType').value;
-            document.getElementById('result').textContent = 'AI Task is running...'; // ローディングメッセージを表示
+            document.getElementById('result').textContent = 'AI Task is running...';
 
             try {
                 const startTime = performance.now();
-                
-                // タスクの種類に応じた処理
+
                 if (taskType === 'simpleTask') {
                     for (let i = 0; i < 1000000; i++) {
                         Math.sqrt(i);
@@ -104,7 +134,13 @@
                 }
 
                 const endTime = performance.now();
-                document.getElementById('result').textContent = `${taskType} simulated in ${(endTime - startTime).toFixed(2)} ms`;
+                const timeTaken = (endTime - startTime).toFixed(2);
+
+                document.getElementById('result').textContent = `${taskType} simulated in ${timeTaken} ms`;
+                
+                // グラフを描画
+                createChart(taskType, timeTaken);
+
             } catch (error) {
                 document.getElementById('result').textContent = `Error: ${error.message}`;
             }
