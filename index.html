@@ -3,110 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Distributed AI Client Demo</title>
+    <title>Distributed AI Client Demo</title>
     <style>
-        :root {
-            --bg-color: #f4f4f9;
-            --text-color: #333;
-            --card-bg: #fff;
-            --button-bg: #007BFF;
-            --button-text: white;
-        }
-        .dark-mode {
-            --bg-color: #1a1a1a;
-            --text-color: #f4f4f9;
-            --card-bg: #2c2c2c;
-            --button-bg: #4a90e2;
-            --button-text: #f4f4f9;
-        }
         body {
             font-family: Arial, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            transition: background-color 0.3s ease, color 0.3s ease;
+            background-color: #f4f4f9;
+            color: #333;
         }
-        button, select, input {
+        button {
             padding: 10px 20px;
             font-size: 16px;
-            background-color: var(--button-bg);
-            color: var(--button-text);
+            background-color: #007BFF;
+            color: white;
             border: none;
             cursor: pointer;
             transition: background-color 0.3s ease;
-            margin: 5px;
         }
         button:hover {
-            opacity: 0.8;
+            background-color: #0056b3;
         }
-        #result, #taskDescriptions, #analysisResult {
+        #result {
             margin-top: 20px;
             padding: 10px;
-            background-color: var(--card-bg);
+            background-color: #e9ecef;
             border: 1px solid #ced4da;
             border-radius: 5px;
         }
         canvas {
             margin-top: 20px;
-            background-color: var(--card-bg);
-            border-radius: 5px;
-            padding: 10px;
-        }
-        .progress-bar {
-            width: 100%;
-            background-color: #e0e0e0;
-            padding: 3px;
-            border-radius: 3px;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, .2);
-        }
-        .progress-bar-fill {
-            display: block;
-            height: 22px;
-            background-color: #659cef;
-            border-radius: 3px;
-            transition: width 500ms ease-in-out;
         }
     </style>
 </head>
 <body>
-    <h1>Advanced Distributed AI Client Demo</h1>
-    <button id="toggleDarkMode">Toggle Dark Mode</button>
+    <h1>Distributed AI Client Demo</h1>
     <div id="deviceInfo"></div>
     
-    <div id="taskDescriptions">
-        <h3>Task Descriptions:</h3>
-        <p><strong>Simple Task:</strong> Basic mathematical operations to simulate CPU load.</p>
-        <p><strong>Image Recognition:</strong> Simulates image processing calculations.</p>
-        <p><strong>NLP Task:</strong> Mimics natural language processing operations.</p>
-    </div>
-
     <button id="simulateAllTasks">Simulate All AI Tasks</button>
-    <button id="simulateSimpleTask">Simulate Simple Task</button>
-    <button id="simulateImageRecognition">Simulate Image Recognition</button>
-    <button id="simulateNLP">Simulate NLP Task</button>
-    
-    <div>
-        <h3>Custom Task</h3>
-        <input type="number" id="customIterations" placeholder="Number of iterations" min="1000" max="10000000" value="1000000">
-        <button id="runCustomTask">Run Custom Task</button>
-    </div>
-    
     <div id="result"></div>
-    <div id="progressBars"></div>
-    <div id="analysisResult"></div>
-    <canvas id="myChart"></canvas>
-    <canvas id="timeSeriesChart"></canvas>
-    
-    <button id="exportResults">Export Results (JSON)</button>
+    <canvas id="myChart"></canvas> <!-- グラフ描画用のキャンバス -->
 
+    <!-- Chart.jsをCDNから読み込む -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        let chart, timeSeriesChart;
-        let taskHistory = [];
-        let deviceResults = JSON.parse(localStorage.getItem('deviceResults')) || {};
-
+        // デバイス情報を取得して表示
         function getDeviceInfo() {
             return {
                 platform: navigator.platform,
@@ -125,20 +67,23 @@
             `;
         }
 
+        let chart; // グラフを保持する変数
+
+        // グラフを描画する関数
         function createChart(taskResults) {
             const ctx = document.getElementById('myChart').getContext('2d');
             
             if (chart) {
-                chart.destroy();
+                chart.destroy(); // 既存のチャートを破棄して再描画
             }
 
             chart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: taskResults.map(result => result.taskType),
+                    labels: taskResults.map(result => result.taskType), // タスク名のラベル
                     datasets: [{
                         label: 'Execution Time (ms)',
-                        data: taskResults.map(result => result.timeTaken),
+                        data: taskResults.map(result => result.timeTaken), // 実行時間のデータ
                         backgroundColor: ['rgba(54, 162, 235, 0.2)', 'rgba(75, 192, 192, 0.2)', 'rgba(153, 102, 255, 0.2)'],
                         borderColor: ['rgba(54, 162, 235, 1)', 'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)'],
                         borderWidth: 1
@@ -154,127 +99,37 @@
             });
         }
 
-        function updateTimeSeriesChart() {
-            const ctx = document.getElementById('timeSeriesChart').getContext('2d');
-            
-            if (timeSeriesChart) {
-                timeSeriesChart.destroy();
-            }
-
-            const datasets = Object.keys(deviceResults).map(device => ({
-                label: device,
-                data: deviceResults[device].map(result => ({
-                    x: new Date(result.timestamp),
-                    y: result.averageTime
-                })),
-                fill: false,
-                borderColor: `rgb(${Math.random() * 255},${Math.random() * 255},${Math.random() * 255})`,
-                tension: 0.1
-            }));
-
-            timeSeriesChart = new Chart(ctx, {
-                type: 'line',
-                data: { datasets },
-                options: {
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'day'
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Average Execution Time (ms)'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        function createProgressBar(taskType) {
-            const progressBarsContainer = document.getElementById('progressBars');
-            const progressBarContainer = document.createElement('div');
-            progressBarContainer.innerHTML = `
-                <p>${taskType} Progress:</p>
-                <div class="progress-bar">
-                    <span class="progress-bar-fill" style="width: 0%;"></span>
-                </div>
-            `;
-            progressBarsContainer.appendChild(progressBarContainer);
-            return progressBarContainer.querySelector('.progress-bar-fill');
-        }
-
-        function updateProgressBar(progressBar, progress) {
-            progressBar.style.width = `${progress}%`;
-        }
-
-        function simulateTask(taskType, iterations = 1000000) {
+        // 各AIタスクのシミュレーション関数
+        function simulateTask(taskType) {
             return new Promise((resolve) => {
-                const progressBar = createProgressBar(taskType);
-                let progress = 0;
-                const intervalId = setInterval(() => {
-                    progress += 10;
-                    updateProgressBar(progressBar, progress);
-                    if (progress >= 100) {
-                        clearInterval(intervalId);
-                    }
-                }, 100);
-
                 setTimeout(() => {
                     const startTime = performance.now();
 
                     if (taskType === 'simpleTask') {
-                        for (let i = 0; i < iterations; i++) {
+                        for (let i = 0; i < 1000000; i++) {
                             Math.sqrt(i);
                         }
                     } else if (taskType === 'imageRecognition') {
-                        for (let i = 0; i < iterations; i++) {
+                        for (let i = 0; i < 1000000; i++) {
                             Math.sin(i);
                         }
                     } else if (taskType === 'nlp') {
-                        for (let i = 0; i < iterations; i++) {
+                        for (let i = 0; i < 1000000; i++) {
                             String.fromCharCode(97 + Math.floor(Math.random() * 26));
-                        }
-                    } else if (taskType === 'customTask') {
-                        for (let i = 0; i < iterations; i++) {
-                            Math.pow(i, 2);
                         }
                     }
 
                     const endTime = performance.now();
                     const timeTaken = (endTime - startTime).toFixed(2);
-                    clearInterval(intervalId);
-                    updateProgressBar(progressBar, 100);
-                    resolve({ taskType, timeTaken: parseFloat(timeTaken), timestamp: new Date().toISOString() });
-                }, 1000);
+                    resolve({ taskType, timeTaken });
+                }, 100); // 非同期的に処理を実行
             });
         }
 
-        async function runTask(taskType) {
-            document.getElementById('result').textContent = `Running ${taskType}...`;
-            document.getElementById('progressBars').innerHTML = '';
-            
-            try {
-                const iterations = taskType === 'customTask' ? parseInt(document.getElementById('customIterations').value) : 1000000;
-                const result = await simulateTask(taskType, iterations);
-                taskHistory.push(result);
-                createChart(taskHistory);
-                document.getElementById('result').textContent = `${taskType} completed in ${result.timeTaken} ms`;
-                analyzeResults();
-                updateDeviceResults();
-            } catch (error) {
-                document.getElementById('result').textContent = `Error: ${error.message}`;
-            }
-        }
-
+        // すべてのAIタスクを一度に実行して結果を表示
         async function simulateAllTasks() {
-            document.getElementById('result').textContent = 'Running all AI Tasks...';
-            document.getElementById('progressBars').innerHTML = '';
-            
+            document.getElementById('result').textContent = 'AI Tasks are running...';
+
             try {
                 const results = await Promise.all([
                     simulateTask('simpleTask'),
@@ -282,72 +137,21 @@
                     simulateTask('nlp')
                 ]);
 
-                taskHistory = results;
-                createChart(results);
                 document.getElementById('result').textContent = 'All tasks completed';
-                analyzeResults();
-                updateDeviceResults();
+                
+                // グラフを描画
+                createChart(results);
+
             } catch (error) {
                 document.getElementById('result').textContent = `Error: ${error.message}`;
             }
         }
 
-        function analyzeResults() {
-            if (taskHistory.length === 0) return;
-            
-            const totalTime = taskHistory.reduce((sum, task) => sum + task.timeTaken, 0);
-            const averageTime = totalTime / taskHistory.length;
-            const minTime = Math.min(...taskHistory.map(task => task.timeTaken));
-            const maxTime = Math.max(...taskHistory.map(task => task.timeTaken));
-            
-            const analysisHTML = `
-                <h3>Analysis Results:</h3>
-                <p>Total Tasks: ${taskHistory.length}</p>
-                <p>Average Time: ${averageTime.toFixed(2)} ms</p>
-                <p>Minimum Time: ${minTime.toFixed(2)} ms</p>
-                <p>Maximum Time: ${maxTime.toFixed(2)} ms</p>
-                <p>Performance Score: ${Math.round(10000 / averageTime)}</p>
-            `;
-            
-            document.getElementById('analysisResult').innerHTML = analysisHTML;
-        }
-
-        function updateDeviceResults() {
-            const deviceName = `${navigator.platform} - ${navigator.hardwareConcurrency} cores`;
-            if (!deviceResults[deviceName]) {
-                deviceResults[deviceName] = [];
-            }
-            deviceResults[deviceName].push({
-                timestamp: new Date().toISOString(),
-                averageTime: taskHistory.reduce((sum, task) => sum + task.timeTaken, 0) / taskHistory.length
-            });
-            localStorage.setItem('deviceResults', JSON.stringify(deviceResults));
-            updateTimeSeriesChart();
-        }
-
-        function exportResults() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(taskHistory));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "task_results.json");
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-        }
-
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-        }
-
+        // ページ読み込み時にデバイス情報を表示
         displayDeviceInfo();
-        updateTimeSeriesChart();
+
+        // ボタンのクリックイベントですべてのAIタスクをシミュレート
         document.getElementById('simulateAllTasks').addEventListener('click', simulateAllTasks);
-        document.getElementById('simulateSimpleTask').addEventListener('click', () => runTask('simpleTask'));
-        document.getElementById('simulateImageRecognition').addEventListener('click', () => runTask('imageRecognition'));
-        document.getElementById('simulateNLP').addEventListener('click', () => runTask('nlp'));
-        document.getElementById('runCustomTask').addEventListener('click', () => runTask('customTask'));
-        document.getElementById('exportResults').addEventListener('click', exportResults);
-        document.getElementById('toggleDarkMode').addEventListener('click', toggleDarkMode);
     </script>
 </body>
 </html>
