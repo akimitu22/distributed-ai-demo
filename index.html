@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Distributed AI Client Demo</title>
+    <title>Enhanced Distributed AI Client Demo</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,11 +21,12 @@
             border: none;
             cursor: pointer;
             transition: background-color 0.3s ease;
+            margin: 5px;
         }
         button:hover {
             background-color: #0056b3;
         }
-        #result {
+        #result, #taskDescriptions {
             margin-top: 20px;
             padding: 10px;
             background-color: #e9ecef;
@@ -35,20 +36,47 @@
         canvas {
             margin-top: 20px;
         }
+        .progress-bar {
+            width: 100%;
+            background-color: #e0e0e0;
+            padding: 3px;
+            border-radius: 3px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, .2);
+        }
+        .progress-bar-fill {
+            display: block;
+            height: 22px;
+            background-color: #659cef;
+            border-radius: 3px;
+            transition: width 500ms ease-in-out;
+        }
     </style>
 </head>
 <body>
-    <h1>Distributed AI Client Demo</h1>
+    <h1>Enhanced Distributed AI Client Demo</h1>
     <div id="deviceInfo"></div>
     
-    <button id="simulateAllTasks">Simulate All AI Tasks</button>
-    <div id="result"></div>
-    <canvas id="myChart"></canvas> <!-- グラフ描画用のキャンバス -->
+    <div id="taskDescriptions">
+        <h3>Task Descriptions:</h3>
+        <p><strong>Simple Task:</strong> Basic mathematical operations to simulate CPU load.</p>
+        <p><strong>Image Recognition:</strong> Simulates image processing calculations.</p>
+        <p><strong>NLP Task:</strong> Mimics natural language processing operations.</p>
+    </div>
 
-    <!-- Chart.jsをCDNから読み込む -->
+    <button id="simulateAllTasks">Simulate All AI Tasks</button>
+    <button id="simulateSimpleTask">Simulate Simple Task</button>
+    <button id="simulateImageRecognition">Simulate Image Recognition</button>
+    <button id="simulateNLP">Simulate NLP Task</button>
+    
+    <div id="result"></div>
+    <div id="progressBars"></div>
+    <canvas id="myChart"></canvas>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // デバイス情報を取得して表示
+        let chart;
+        let taskHistory = [];
+
         function getDeviceInfo() {
             return {
                 platform: navigator.platform,
@@ -67,23 +95,20 @@
             `;
         }
 
-        let chart; // グラフを保持する変数
-
-        // グラフを描画する関数
         function createChart(taskResults) {
             const ctx = document.getElementById('myChart').getContext('2d');
             
             if (chart) {
-                chart.destroy(); // 既存のチャートを破棄して再描画
+                chart.destroy();
             }
 
             chart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: taskResults.map(result => result.taskType), // タスク名のラベル
+                    labels: taskResults.map(result => result.taskType),
                     datasets: [{
                         label: 'Execution Time (ms)',
-                        data: taskResults.map(result => result.timeTaken), // 実行時間のデータ
+                        data: taskResults.map(result => result.timeTaken),
                         backgroundColor: ['rgba(54, 162, 235, 0.2)', 'rgba(75, 192, 192, 0.2)', 'rgba(153, 102, 255, 0.2)'],
                         borderColor: ['rgba(54, 162, 235, 1)', 'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)'],
                         borderWidth: 1
@@ -99,9 +124,35 @@
             });
         }
 
-        // 各AIタスクのシミュレーション関数
+        function createProgressBar(taskType) {
+            const progressBarsContainer = document.getElementById('progressBars');
+            const progressBarContainer = document.createElement('div');
+            progressBarContainer.innerHTML = `
+                <p>${taskType} Progress:</p>
+                <div class="progress-bar">
+                    <span class="progress-bar-fill" style="width: 0%;"></span>
+                </div>
+            `;
+            progressBarsContainer.appendChild(progressBarContainer);
+            return progressBarContainer.querySelector('.progress-bar-fill');
+        }
+
+        function updateProgressBar(progressBar, progress) {
+            progressBar.style.width = `${progress}%`;
+        }
+
         function simulateTask(taskType) {
             return new Promise((resolve) => {
+                const progressBar = createProgressBar(taskType);
+                let progress = 0;
+                const intervalId = setInterval(() => {
+                    progress += 10;
+                    updateProgressBar(progressBar, progress);
+                    if (progress >= 100) {
+                        clearInterval(intervalId);
+                    }
+                }, 100);
+
                 setTimeout(() => {
                     const startTime = performance.now();
 
@@ -121,15 +172,32 @@
 
                     const endTime = performance.now();
                     const timeTaken = (endTime - startTime).toFixed(2);
+                    clearInterval(intervalId);
+                    updateProgressBar(progressBar, 100);
                     resolve({ taskType, timeTaken });
-                }, 100); // 非同期的に処理を実行
+                }, 1000);
             });
         }
 
-        // すべてのAIタスクを一度に実行して結果を表示
-        async function simulateAllTasks() {
-            document.getElementById('result').textContent = 'AI Tasks are running...';
+        async function runTask(taskType) {
+            document.getElementById('result').textContent = `Running ${taskType}...`;
+            document.getElementById('progressBars').innerHTML = '';
+            
+            try {
+                const result = await simulateTask(taskType);
+                taskHistory.push(result);
+                createChart(taskHistory);
+                document.getElementById('result').textContent = `${taskType} completed in ${result.timeTaken} ms`;
+                calculatePerformanceScore();
+            } catch (error) {
+                document.getElementById('result').textContent = `Error: ${error.message}`;
+            }
+        }
 
+        async function simulateAllTasks() {
+            document.getElementById('result').textContent = 'Running all AI Tasks...';
+            document.getElementById('progressBars').innerHTML = '';
+            
             try {
                 const results = await Promise.all([
                     simulateTask('simpleTask'),
@@ -137,21 +205,30 @@
                     simulateTask('nlp')
                 ]);
 
-                document.getElementById('result').textContent = 'All tasks completed';
-                
-                // グラフを描画
+                taskHistory = results;
                 createChart(results);
-
+                document.getElementById('result').textContent = 'All tasks completed';
+                calculatePerformanceScore();
             } catch (error) {
                 document.getElementById('result').textContent = `Error: ${error.message}`;
             }
         }
 
-        // ページ読み込み時にデバイス情報を表示
-        displayDeviceInfo();
+        function calculatePerformanceScore() {
+            if (taskHistory.length === 0) return;
+            
+            const totalTime = taskHistory.reduce((sum, task) => sum + parseFloat(task.timeTaken), 0);
+            const averageTime = totalTime / taskHistory.length;
+            const score = Math.round(10000 / averageTime);
+            
+            document.getElementById('result').innerHTML += `<br>Performance Score: ${score}`;
+        }
 
-        // ボタンのクリックイベントですべてのAIタスクをシミュレート
+        displayDeviceInfo();
         document.getElementById('simulateAllTasks').addEventListener('click', simulateAllTasks);
+        document.getElementById('simulateSimpleTask').addEventListener('click', () => runTask('simpleTask'));
+        document.getElementById('simulateImageRecognition').addEventListener('click', () => runTask('imageRecognition'));
+        document.getElementById('simulateNLP').addEventListener('click', () => runTask('nlp'));
     </script>
 </body>
 </html>
