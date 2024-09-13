@@ -99,35 +99,30 @@
             });
         }
 
-        // 各AIタスクのシミュレーション関数 (非同期化)
+        // 各AIタスクのシミュレーション関数
         function simulateTask(taskType) {
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 setTimeout(() => {
                     const startTime = performance.now();
 
-                    try {
-                        if (taskType === 'simpleTask') {
-                            for (let i = 0; i < 1000000; i++) {
-                                Math.sqrt(i);
-                            }
-                        } else if (taskType === 'imageRecognition') {
-                            for (let i = 0; i < 1000000; i++) {
-                                Math.sin(i);
-                            }
-                        } else if (taskType === 'nlp') {
-                            for (let i = 0; i < 1000000; i++) {
-                                String.fromCharCode(97 + Math.floor(Math.random() * 26));
-                            }
+                    if (taskType === 'simpleTask') {
+                        for (let i = 0; i < 1000000; i++) {
+                            Math.sqrt(i);
                         }
-
-                        const endTime = performance.now();
-                        const timeTaken = (endTime - startTime).toFixed(2);
-                        resolve({ taskType, timeTaken });
-
-                    } catch (error) {
-                        reject(error);
+                    } else if (taskType === 'imageRecognition') {
+                        for (let i = 0; i < 1000000; i++) {
+                            Math.sin(i);
+                        }
+                    } else if (taskType === 'nlp') {
+                        for (let i = 0; i < 1000000; i++) {
+                            String.fromCharCode(97 + Math.floor(Math.random() * 26));
+                        }
                     }
-                }, 0); // 非同期的にタスクを実行
+
+                    const endTime = performance.now();
+                    const timeTaken = (endTime - startTime).toFixed(2);
+                    resolve({ taskType, timeTaken });
+                }, 100); // 非同期的に処理を実行
             });
         }
 
