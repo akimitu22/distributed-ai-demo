@@ -1,1 +1,23 @@
-
+<!DOCTYPE html>
+   <html>
+   <head>
+       <title>WebSocket Test</title>
+       <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+   </head>
+   <body>
+       <h1>WebSocket Test</h1>
+       <div id="messages"></div>
+       <script>
+           const socket = io('http://localhost:3000');
+           socket.on('taskCreated', (task) => {
+               document.getElementById('messages').innerHTML += `<p>Task Created: ${JSON.stringify(task)}</p>`;
+           });
+           socket.on('taskUpdated', (task) => {
+               document.getElementById('messages').innerHTML += `<p>Task Updated: ${JSON.stringify(task)}</p>`;
+           });
+           socket.on('taskDeleted', (taskId) => {
+               document.getElementById('messages').innerHTML += `<p>Task Deleted: ${taskId}</p>`;
+           });
+       </script>
+   </body>
+   </html>
